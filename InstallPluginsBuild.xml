@@ -1,0 +1,88 @@
+<?xml version="1.0"?>
+<!-- 
+# * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+#  Copyright 2009 by the Regents of the University of Michigan
+#  See detailed notice of copyright in the file Copyright.txt
+#  which is packaged with this file.
+#  
+#  Supported by National Institutes of Health, Grant U54 DA021519
+#  as part of the NIH's National Center for Integrative Biomedical
+#  Informatics (NCIBI), see www.ncibi.org.
+# * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+-->
+<project name="InstallPlugins" default="dev-deploy">
+	
+	<!-- Include property values -->
+	<property name="build.properties" location="build.properties" />
+	<property file="${build.properties}" />
+
+	<!-- local and derived values -->
+	<property name="lib" location="lib"/>
+	<property name="target.dir" location="target" />
+	<property name="plugins.dir" location="${target.dir}/plugins" />
+	<property name="metdisease.plugin" location="${target.dir}/MetDisease.jar" />
+
+	<!-- check for required files and directories -->
+	<target name="filecheck">
+    	<available file="${build.properties}" property="properties.exists" />
+		<condition property="cytoscape.exists">
+			<and>
+		    	<available file="${cytoscape.base}"/>
+		    	<available file="${cytoscape.plugin}"/>
+			</and>
+		</condition>
+		<condition property="target.ok">
+			<and>
+				<available file="${target.dir}" />
+				<available file="${metdisease.plugin}" />
+			</and>
+		</condition>
+	</target>
+
+	<target name="checkProperties" depends="filecheck" unless="properties.exists" >
+		<echo message="The properties file (${build.properties}) does not exist."/>
+		<echo message="See the file template.build.properties."/>
+		<fail message="no build.properties" />
+	</target>
+
+	<target name="checkCytoscape" depends="filecheck" unless="cytoscape.exists">
+		<echo message="The Cytoscape plugins directory (e.g. ${cytoscape.plugin}) is not available."/>
+		<echo message="Check the properties file (${build.properties}). See the file template.build.properties." />
+		<fail message="missing Cytoscape support" />
+	</target>
+
+	<target name="checkTarget" depends="filecheck" unless="target.ok">
+		<echo message="One or more component of target directory (e.g. ${target.dir}) are not available."/>
+		<echo message="Check for ${target.dir} and ${metdisease.plugin}." />
+		<echo message="Run Maven with goals 'clean' and 'package'. Be sure to do a refresh." />
+		<fail message="missing Target components" />
+	</target>
+
+	<target name="checkAll" depends="checkProperties,checkCytoscape,checkTarget"/>
+
+    <target name="clean">
+		<delete dir="${plugins.dir}" />
+	</target>
+
+	<!-- set up all build dirs -->
+	<target name="ready" depends="checkAll">
+		<mkdir dir="${target.dir}" />
+		<mkdir dir="${plugins.dir}" />
+	</target>
+		
+	<target name="dev-deploy" depends="ready" description="deploy plugins directory, for development, in ${plugins.dir}">
+		<echo>
+********************
+Running InstallPluginsBuild.xml - 
+	this copies the plugins directory from cytoscape to local directory, ${plugins.dir}
+	it also makes a copy of the MetDisease.jar file in the plugins directory	
+(Be sure to do a refresh in your Eclipse project after running this)
+********************
+		</echo>
+		<copy todir="${plugins.dir}">
+			<fileset dir="${cytoscape.plugin}" />
+		</copy>
+		<copy todir="${plugins.dir}" file="${metdisease.plugin}" />
+	</target>
+	
+</project>
